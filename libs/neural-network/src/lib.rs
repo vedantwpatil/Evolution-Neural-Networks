@@ -20,19 +20,32 @@ struct Neuron {
 
 impl Layer {
     fn propagate(&self, inputs: Vec<f32>) -> Vec<f32> {
-        let mut outputs = Vec::new();
+        // let mut outputs = Vec::new();
 
-        for neuron in &self.neurons {
-            let output = neuron.propagate(inputs);
-            outputs.push(output);
-        }
+        // for neuron in &self.neurons {
+        //     // We have to ensure that we are borrowing the ownership of inputs and not moving the
+        //     // ownership
+        //     let output = neuron.propagate(&inputs);
+        //     outputs.push(output);
+        // }
 
-        outputs
+        // We can instead use the map higher ordered function
+        self.neurons
+            .iter()
+            .map(|neuron| neuron.propagate(&inputs))
+            .collect()
     }
 }
 
 impl Network {
-    pub fn propagate(&self, mut inputs: Vec<f32>) -> Vec<f32> {
+    // We have to ensure that in each iteration we are borrowing the ownership of inputs and not
+    // move it into layer.propagate, otherwise when we try to run the next iteration we don't
+    // have access to inputs
+
+    // We also have to ensure that our function works on borrowed elements
+    pub fn propagate(&self, inputs: Vec<f32>) -> Vec<f32> {
+        // This is using higher order functions
+
         self.layers
             .iter()
             .fold(inputs, |inputs, layer| layer.propagate(inputs))
@@ -40,7 +53,9 @@ impl Network {
 }
 
 impl Neuron {
-    fn propagate(&self, inputs: Vec<f32>) -> f32 {
+    // We have to ensure that our code allows for the use borrowed ownership of inputs rather than
+    // moved ownership of inputs
+    fn propagate(&self, inputs: &[f32]) -> f32 {
         todo!()
     }
 }
