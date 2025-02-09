@@ -18,6 +18,7 @@ struct Neuron {
     weights: Vec<f32>,
 }
 
+// Higher order functions are often prefered in rust due to faster compile times
 impl Layer {
     fn propagate(&self, inputs: Vec<f32>) -> Vec<f32> {
         // let mut outputs = Vec::new();
@@ -50,13 +51,26 @@ impl Network {
             .iter()
             .fold(inputs, |inputs, layer| layer.propagate(inputs))
     }
+
+    pub fn new(layers: Vec<Layer>) -> Self {
+        Self { layers }
+    }
 }
 
 impl Neuron {
     // We have to ensure that our code allows for the use borrowed ownership of inputs rather than
     // moved ownership of inputs
     fn propagate(&self, inputs: &[f32]) -> f32 {
-        todo!()
+        // This implementation assumes that inputs.len() is always the same as self.weights.len()
+        assert_eq!(inputs.len(), self.weights.len());
+
+        let output = inputs
+            .iter()
+            .zip(&self.weights)
+            .map(|(input, weight)| input * weight)
+            .sum::<f32>();
+
+        (self.bias + output).max(0.0)
     }
 }
 
