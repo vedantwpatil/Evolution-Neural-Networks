@@ -1,3 +1,5 @@
+use rand::Rng;
+
 pub fn add(left: usize, right: usize) -> usize {
     left + right
 }
@@ -18,6 +20,11 @@ struct Neuron {
     weights: Vec<f32>,
 }
 
+#[derive(Debug)]
+pub struct LayerTopology {
+    pub neurons: usize,
+}
+
 // Higher order functions are often prefered in rust due to faster compile times
 impl Layer {
     fn propagate(&self, inputs: Vec<f32>) -> Vec<f32> {
@@ -36,6 +43,13 @@ impl Layer {
             .map(|neuron| neuron.propagate(&inputs))
             .collect()
     }
+
+    fn random(input_size: usize, output_size: usize) -> Self {
+        let neurons = (0..output_size)
+            .map(|_| Neuron::random(input_size))
+            .collect();
+        Self { neurons }
+    }
 }
 
 impl Network {
@@ -52,6 +66,14 @@ impl Network {
             .fold(inputs, |inputs, layer| layer.propagate(inputs))
     }
 
+    pub fn random(layers: &[LayerTopology]) -> Self {
+        let layers = layers
+            .windows(2)
+            .map(|layers| Layer::random(layers[0].neurons, layers[1].neurons))
+            .collect();
+
+        Self { layers }
+    }
     pub fn new(layers: Vec<Layer>) -> Self {
         Self { layers }
     }
@@ -71,6 +93,15 @@ impl Neuron {
             .sum::<f32>();
 
         (self.bias + output).max(0.0)
+    }
+
+    fn random(input_size: usize) -> Self {
+        let mut rng = rand::thread_rng();
+        let bias = rng.gen_range(-1.0..=1.0);
+
+        let weights = (0..input_size).map(|_| rng.gen_range(-1.0..=1.0)).collect();
+
+        Self { bias, weights }
     }
 }
 
