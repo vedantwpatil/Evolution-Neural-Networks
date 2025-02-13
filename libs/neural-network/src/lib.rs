@@ -58,9 +58,9 @@ impl Network {
         Self { layers }
     }
 
-    pub fn new(layers: Vec<Layer>) -> Self {
-        Self { layers }
-    }
+    // pub fn new(layers: Vec<Layer>) -> Self {
+    //     Self { layers }
+    // }
 }
 
 impl Neuron {
@@ -77,8 +77,10 @@ impl Neuron {
     }
 
     fn random(rng: &mut dyn RngCore, input_size: usize) -> Self {
-        let bias = rng.gen_range(-1.0..=1.0);
-        let weights = (0..input_size).map(|_| rng.gen_range(-1.0..=1.0)).collect();
+        let bias = rng.random_range(-1.0..=1.0);
+        let weights = (0..input_size)
+            .map(|_| rng.random_range(-1.0..=1.0))
+            .collect();
 
         Self { bias, weights }
     }
@@ -96,7 +98,7 @@ mod tests {
         let mut rng = ChaCha20Rng::seed_from_u64(42);
         let neuron = Neuron::random(&mut rng, 4);
 
-        assert_relative_eq!(neuron.bias, 0.68522);
+        assert_relative_eq!(neuron.bias, 0.68521976);
         assert_relative_eq!(
             neuron.weights.as_slice(),
             [0.028098702, 0.2741512, -0.1796025, -0.99653935].as_ref()
