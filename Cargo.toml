@@ -1,4 +1,4 @@
 [workspace]
 resolve = "2"
 
-members = ["libs/neural-network"]
+members = [ "libs/genetic-algorithm","libs/neural-network"]
