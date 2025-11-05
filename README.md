@@ -19,6 +19,9 @@ We could've chosen to have a field for both output and input neurons, however th
 
 Instead we can create a struct to hold the amount of neurons that are in each respective layer, with this information we can then more easily propagate data from each subsequent layer
 
+**Testing**
+Regularly it would be difficult to test non deterministic data so we ensure that we are using a random seed to ensure that we create the same values and able to ensure effectiveness
+
 ## Learning Rust
 
 Rust calculations are more efficient when using functional programming and iterators, this is something to get more used to.
