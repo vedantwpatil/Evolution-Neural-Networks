@@ -98,12 +98,49 @@ mod tests {
         let mut rng = ChaCha20Rng::from_seed(Default::default());
         let neuron = Neuron::random(&mut rng, 4);
 
+        // Verify we're creating random biases
         assert_relative_eq!(neuron.bias, 0.35842037);
 
+        // Verify we're creating random weights
         assert_relative_eq!(
             neuron.weights.as_slice(),
             [0.12689018, 0.79230833, -0.6817162, 0.43828797].as_ref()
         );
+    }
+
+    #[test]
+    fn layer_random_structure() {
+        let mut rng = ChaCha20Rng::from_seed(Default::default());
+        let input_size = 3;
+        let output_size = 2;
+        let layer = Layer::random(&mut rng, input_size, output_size);
+
+        // Verify the layer has the correct number of neurons
+        assert_eq!(layer.neurons.len(), output_size);
+
+        // Verify each neuron has the correct number of weights
+        for neuron in &layer.neurons {
+            assert_eq!(neuron.weights.len(), input_size);
+        }
+    }
+
+    #[test]
+    fn layer_random_values() {
+        let mut rng = ChaCha20Rng::from_seed(Default::default());
+        let layer = Layer::random(&mut rng, 4, 2);
+
+        // Verify deterministic generation with seeded RNG
+        // First neuron's bias should match what Neuron::random generates first
+        assert_relative_eq!(layer.neurons[0].bias, 0.35842037);
+
+        // First neuron's weights should match deterministic sequence
+        assert_relative_eq!(
+            layer.neurons[0].weights.as_slice(),
+            [0.12689018, 0.79230833, -0.6817162, 0.43828797].as_ref()
+        );
+
+        // Second neuron should have different values (RNG state has advanced)
+        assert_relative_eq!(layer.neurons[1].bias, -0.78962564);
     }
 
     #[test]

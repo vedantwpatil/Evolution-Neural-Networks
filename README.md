@@ -25,3 +25,7 @@ Regularly it would be difficult to test non deterministic data so we ensure that
 ## Learning Rust
 
 Rust calculations are more efficient when using functional programming and iterators, this is something to get more used to.
+
+#### Need To Finish
+
+Finish writing the tests for the network functions
