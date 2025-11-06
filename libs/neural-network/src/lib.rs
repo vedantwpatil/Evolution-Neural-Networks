@@ -26,7 +26,8 @@ impl Network {
     pub fn new(layers: Vec<Layer>) -> Self {
         Self { layers }
     }
-    pub fn random(rng: &mut dyn RngCore, layers: &[LayerTopology]) -> Self {
+    // Dyn stands for dynamic traits, we can switch this to generics for better performance
+    pub fn random<R: RngCore>(rng: &mut R, layers: &[LayerTopology]) -> Self {
         // We need to force our network to have more than one layer as it makes more sense
         assert!(layers.len() > 1);
 
@@ -51,7 +52,7 @@ impl Layer {
             .collect()
     }
 
-    fn random(rng: &mut dyn RngCore, input_size: usize, output_size: usize) -> Self {
+    fn random<R: RngCore>(rng: &mut R, input_size: usize, output_size: usize) -> Self {
         let neurons = (0..output_size)
             // Accept an argument we don't care about for our closure
             .map(|_| Neuron::random(rng, input_size))
@@ -74,7 +75,7 @@ impl Neuron {
         (self.bias + output).max(0.0)
     }
 
-    fn random(rng: &mut dyn RngCore, input_size: usize) -> Neuron {
+    fn random<R: RngCore>(rng: &mut R, input_size: usize) -> Neuron {
         let bias = rng.random_range(-1.0..=1.0);
 
         let weights = (0..input_size)

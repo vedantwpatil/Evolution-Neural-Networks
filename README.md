@@ -22,6 +22,9 @@ Instead we can create a struct to hold the amount of neurons that are in each re
 **Testing**
 Regularly it would be difficult to test non deterministic data so we ensure that we are using a random seed to ensure that we create the same values and able to ensure effectiveness
 
+**Genetic Algorithm**
+We can make optimizations towards our genetic algorithm to bias the best available genetic specimens however doing this process in the earlier phases makes it harder to find a more global optimal and we could find ourselves in more local optimal
+
 ## Learning Rust
 
 Rust calculations are more efficient when using functional programming and iterators, this is something to get more used to.
