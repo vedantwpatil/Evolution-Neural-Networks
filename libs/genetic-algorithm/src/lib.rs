@@ -2,9 +2,10 @@ use rand::seq::IndexedRandom;
 use rand::{Rng, RngCore};
 use std::ops::Index;
 
-pub struct GeneticAlgorithm<S, C> {
+pub struct GeneticAlgorithm<S, C, M> {
     selection_method: S,
     crossover_method: C,
+    mutation_method: M,
 }
 
 pub struct RouletteWheelSelection;
@@ -19,13 +20,14 @@ pub struct UniformCrossover;
 
 #[derive(Clone, Debug)]
 pub struct GaussianMutation {
-    // likelyhood of the entire genepool getting effected
+    // likelihood of the entire gene pool getting effected
     chance: f32,
 
     // Magnitude of the change
     coeff: f32,
 }
 pub trait Individual {
+    fn create(chromosome: Chromosome) -> Self;
     fn fitness(&self) -> f32;
     fn chromosome(&self) -> &Chromosome;
 }
@@ -75,15 +77,17 @@ impl SelectionMethod for RouletteWheelSelection {
     }
 }
 
-impl<S, C> GeneticAlgorithm<S, C>
+impl<S, C, M> GeneticAlgorithm<S, C, M>
 where
     S: SelectionMethod,
     C: CrossoverMethod,
+    M: MutationMethod,
 {
-    pub fn new(selection_method: S, crossover_method: C) -> Self {
+    pub fn new(selection_method: S, crossover_method: C, mutation_method: M) -> Self {
         Self {
             selection_method,
             crossover_method,
+            mutation_method,
         }
     }
     // I is a type parameter, I is a individual
@@ -100,7 +104,9 @@ where
 
                 let mut child = self.crossover_method.crossover(rng, parent_a, parent_b);
 
-                todo!()
+                self.mutation_method.mutate(rng, &mut child);
+
+                I::create(child)
             })
             .collect()
     }
@@ -163,7 +169,7 @@ impl MutationMethod for GaussianMutation {
             let sign = if rng.random_bool(0.5) { -1.0 } else { 1.0 };
 
             if rng.random_bool(self.chance as f64) {
-                *gene != sign * self.coeff * rng.random::<f32>();
+                *gene += sign * self.coeff * rng.random::<f32>();
             }
         }
     }
@@ -172,40 +178,71 @@ impl MutationMethod for GaussianMutation {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use approx::relative_eq;
     use rand::SeedableRng;
     use rand_chacha::ChaCha20Rng;
     use std::collections::BTreeMap;
     use std::iter::FromIterator;
 
-    #[derive(Clone, Debug)]
-    struct TestIndvidual {
-        fitness: f32,
+    #[derive(Clone, Debug, PartialEq)]
+    enum TestIndividual {
+        /// For tests that require access to the chromosome
+        WithChromosome { chromosome: Chromosome },
+
+        /// For tests that don't require access to the chromosome
+        WithFitness { fitness: f32 },
     }
 
-    impl TestIndvidual {
+    impl TestIndividual {
         fn new(fitness: f32) -> Self {
-            Self { fitness }
+            Self::WithFitness { fitness }
         }
     }
 
-    impl Individual for TestIndvidual {
-        fn fitness(&self) -> f32 {
-            self.fitness
+    impl Individual for TestIndividual {
+        fn create(chromosome: Chromosome) -> Self {
+            Self::WithChromosome { chromosome }
         }
 
         fn chromosome(&self) -> &Chromosome {
-            panic!("not supported for TestIndividual")
+            match self {
+                Self::WithChromosome { chromosome } => chromosome,
+
+                Self::WithFitness { .. } => {
+                    panic!("not supported for TestIndividual::WithFitness")
+                }
+            }
+        }
+
+        fn fitness(&self) -> f32 {
+            match self {
+                Self::WithChromosome { chromosome } => {
+                    chromosome.iter().sum()
+
+                    // ^ the simplest fitness function ever - we're just
+                    // summing all the genes together
+                }
+
+                Self::WithFitness { fitness } => *fitness,
+            }
         }
     }
+
+    impl PartialEq for Chromosome {
+        fn eq(&self, other: &Self) -> bool {
+            approx::relative_eq!(self.genes.as_slice(), other.genes.as_slice())
+        }
+    }
+
     #[test]
     fn roulette_wheel_selection() {
         let mut rng = ChaCha20Rng::from_seed(Default::default());
 
         let population = vec![
-            TestIndvidual::new(2.0),
-            TestIndvidual::new(1.0),
-            TestIndvidual::new(4.0),
-            TestIndvidual::new(3.0),
+            TestIndividual::new(2.0),
+            TestIndividual::new(1.0),
+            TestIndividual::new(4.0),
+            TestIndividual::new(3.0),
         ];
 
         let mut actual_histogram = BTreeMap::new();
@@ -317,5 +354,46 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn genetic_algorithm() {
+        fn individual(genes: &[f32]) -> TestIndividual {
+            TestIndividual::create(genes.iter().cloned().collect())
+        }
+
+        let mut rng = ChaCha20Rng::from_seed(Default::default());
+
+        let ga = GeneticAlgorithm::new(
+            RouletteWheelSelection,
+            UniformCrossover,
+            GaussianMutation::new(0.5, 0.5),
+        );
+
+        let mut population = vec![
+            individual(&[0.0, 0.0, 0.0]),
+            individual(&[1.0, 1.0, 1.0]),
+            individual(&[1.0, 2.0, 1.0]),
+            individual(&[1.0, 2.0, 4.0]),
+        ];
+
+        // We're running `.evolve()` a few times, so that the differences between the
+        // input and output population are easier to spot.
+        //
+        // No particular reason for a number of 10 - this test would be fine for 5, 20 or
+        // even 1000 generations - the only thing that'd change is the magnitude of the
+        // difference between the populations.
+        for _ in 0..10 {
+            population = ga.evolve(&mut rng, &population);
+        }
+
+        let expected_population = vec![
+            individual(&[0.87158895, 2.7839007, 3.3230057]),
+            individual(&[0.8208917, 1.9812367, 4.456675]),
+            individual(&[1.6392304, 2.4603002, 4.586419]),
+            individual(&[1.6392304, 2.515803, 3.73202]),
+        ];
+
+        assert_eq!(population, expected_population);
     }
 }

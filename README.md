@@ -25,6 +25,10 @@ Regularly it would be difficult to test non deterministic data so we ensure that
 **Genetic Algorithm**
 We can make optimizations towards our genetic algorithm to bias the best available genetic specimens however doing this process in the earlier phases makes it harder to find a more global optimal and we could find ourselves in more local optimal
 
+**Mutation Algorithm**
+
+**Gaussian Mutation**
+
 ## Learning Rust
 
 Rust calculations are more efficient when using functional programming and iterators, this is something to get more used to.
@@ -32,3 +36,5 @@ Rust calculations are more efficient when using functional programming and itera
 #### Need To Finish
 
 Finish writing the tests for the network functions
+
+Finish writing the tests for the Gaussian functions for different chance and coefficients
